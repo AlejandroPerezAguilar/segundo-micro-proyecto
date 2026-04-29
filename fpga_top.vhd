@@ -18,9 +18,9 @@ architecture top of fpga_top is
 
 component divisorfreq
 port(
-				clk : std_logic;
-				freq_sel      : std_logic_vector(1 downto 0);
-				clk_out      : std_logic 
+				clk :  in std_logic;
+				freq_sel      : in std_logic_vector(1 downto 0);
+				clk_out      : out std_logic 
 );
 	 end component;
     
@@ -49,13 +49,56 @@ signal rst : std_logic;
 signal data_out_s : std_logic_vector (DATA_WIDTH-1 downto 0);
 
 signal we_s : std_logic;
-signal addr_s : std_logic_vector (DATA_WIDTH-1 downto 0);
+signal addr_s : std_logic_vector (ADDR_WIDTH-1 downto 0);
 signal data_in_s :std_logic_vector (DATA_WIDTH-1 downto 0);
 
 signal valor : integer;
-signal c, d, u : integer;
+signal c: integer;
+signal d: integer;
+signal u: integer;
 
 begin
 
+rst <= NOT key;
 
-end architecture;
+div : divisorfreq
+	port map (
+			clk      => CLOCK_50,
+			freq_sel => "10",
+			clk_out  => clk_lento
+);
+
+sistema : micro2
+  port map (
+            clk      => clk_lento,
+            rst      => rst,
+            re       => '1',
+            we       => we_s,
+            addr     => addr_s,
+            data_in  => data_in_s,
+            data_out => data_out_s
+        );
+
+valor <= to_integer(unsigned(data_out_s));
+		  
+c <= valor/100;
+d <= (valor mod 100) /10;
+u <= valor mod 10;
+
+disp0 : bcd7seg
+        port map (
+            bcd => std_logic_vector(to_unsigned(u, 4)),
+            seg => HEX0
+        );
+disp1 : bcd7seg
+        port map (
+            bcd => std_logic_vector(to_unsigned(d, 4)),
+            seg => HEX1
+        );
+
+    disp2 : bcd7seg
+        port map (
+            bcd => std_logic_vector(to_unsigned(c, 4)),
+            seg => HEX2
+        );		  
+end architecture top;
