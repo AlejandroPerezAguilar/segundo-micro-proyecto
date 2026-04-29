@@ -17,10 +17,10 @@ end entity;
 architecture top of fpga_top is
 
 component divisorfreq
-port(
+port()
 				clk : std_logic;
 				freq_sel      : std_logic_vector(1 downto 0);
-				clk_out      : std_logic 
+				clk_out      : std_logic ;
 );
 	 end component;
     
@@ -42,20 +42,3 @@ port(
             seg : out std_logic_vector(6 downto 0)
 );
 end component;
-
-signal clk_lento: std_logic;
-signal rst : std_logic;
-
-signal data_out_s : std_logic_vector (DATA_WIDTH-1 downto 0);
-
-signal we_s : std_logic;
-signal addr_s : std_logic_vector (DATA_WIDTH-1 downto 0);
-signal data_in_s :std_logic_vector (DATA_WIDTH-1 downto 0);
-
-signal valor : integer;
-signal c, d, u : integer;
-
-begin
-
-
-end architecture;
