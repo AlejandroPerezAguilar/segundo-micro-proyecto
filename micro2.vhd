@@ -1,4 +1,4 @@
-library IEEE;
+	library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
 use work.package_memorias.ALL;
@@ -59,6 +59,7 @@ begin
         );
 
     -- Registro de estados
+
     process(clk, rst)
     begin
         if rst = '1' then
@@ -70,20 +71,21 @@ begin
             state_reg <= state_next;		-- Actualiza al siguiente estado 
 
             if state_reg = S2 then
-                ram_din <= rom_data;
+                ram_din <= rom_data; 		-- Copia el dato de la ROM para escribirlo en la RAM
             end if;
 
             if state_reg = S4 then
-                if addr_reg = to_unsigned(MEM_DEPTH-1, ADDR_WIDTH) then
-                    addr_reg <= (others => '0');
+                if addr_reg = to_unsigned(MEM_DEPTH-1, ADDR_WIDTH) then -- Comprueba si la direccion actual es la ultima posicion de la memoria
+                    addr_reg <= (others => '0');  	-- Reinicia la dirección si llego al final
                 else
-                    addr_reg <= addr_reg + 1;
+                    addr_reg <= addr_reg + 1;		-- Pasa a la siguiente direccion
                 end if;
             end if;
         end if;
     end process;
 
     -- Lógica de siguiente estado
+	 
     process(state_reg, re, addr_reg)
     begin
         state_next <= state_reg;
@@ -91,26 +93,26 @@ begin
         case state_reg is
 
             when S0 =>
-                state_next <= S1;
-
+                state_next <= S1; -- S0 -> S1 Inicio 
+				
             when S1 =>
-                state_next <= S2;
+                state_next <= S2; -- S1 -> S2 Leer RAM
 
             when S2 =>
-                state_next <= S3;
+                state_next <= S3; -- S2 -> S3 Escribir RAM
 
             when S3 =>
                 if re = '1' then
-                    state_next <= S4;
+                    state_next <= S4; -- Espera habilitacion de lectura 
                 else
                     state_next <= S3;
                 end if;
 
             when S4 =>
-                if addr_reg = to_unsigned(MEM_DEPTH-1, ADDR_WIDTH) then
-                    state_next <= S0;
+                if addr_reg = to_unsigned(MEM_DEPTH-1, ADDR_WIDTH) then -- Comprueba si la direccion actual es la ultima posicion de la memoria
+                    state_next <= S0; -- Reinicia el proceso en el estado inicial 
                 else
-                    state_next <= S1;
+                    state_next <= S1; -- Continua con la siguiente direccion 	
                 end if;
 
         end case;
@@ -121,35 +123,42 @@ begin
     begin
         wr_en_s <= '0';
         rd_en_s <= '0';
-
+		  
+			--Por defecto no se escribe ni se lee la RAM
+			
         case state_reg is
 
             when S0 =>
+						--Estado inicial, no se realiza ninguna operacion
                 wr_en_s <= '0';
                 rd_en_s <= '0';
-
+					 
             when S1 =>
+						-- Se esta leyendo la ROM, sin acceso a la RAM	
                 wr_en_s <= '0';
                 rd_en_s <= '0';
 
             when S2 =>
+					-- Activa la escritura de la RAM (guarda el dato de la ROM)
                 wr_en_s <= '1';
                 rd_en_s <= '0';
-
+					
             when S3 =>
+					-- Habilita la lectura de la RAM segun la señal re	 
                 wr_en_s <= '0';
                 rd_en_s <= re;
-
+					
             when S4 =>
+					-- Mantiene la lectura de la RAM mientras se avanza en la direccion 		 
                 wr_en_s <= '0';
                 rd_en_s <= re;
-
+					 
         end case;
     end process;
 
-    we       <= wr_en_s;
-    addr     <= std_logic_vector(addr_reg);
-    data_in  <= ram_din;
-    data_out <= ram_dout;
+    we       <= wr_en_s; -- Señal de escritura externa 
+    addr     <= std_logic_vector(addr_reg); -- Direccion actual 
+    data_in  <= ram_din; -- Dato que entra a la RAM
+    data_out <= ram_dout; -- Dato leido de la RAM (va al display)
 
 end architecture;
