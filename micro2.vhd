@@ -5,28 +5,30 @@ use work.package_memorias.ALL;
 
 entity micro2 is
     port (
-        clk      : in  std_logic;
-        rst      : in  std_logic;
-        re       : in  std_logic;
-        we       : out std_logic;
-        addr     : out std_logic_vector(ADDR_WIDTH-1 downto 0);
-        data_in  : out std_logic_vector(DATA_WIDTH-1 downto 0);
-        data_out : out std_logic_vector(DATA_WIDTH-1 downto 0)
+        clk      : in  std_logic; -- Reloj del sistema 
+        rst      : in  std_logic; -- Reset del sistema 
+        re       : in  std_logic; -- Habilita la lectura de la RAM
+        we       : out std_logic; -- Escritura hacia la RAM 
+        addr     : out std_logic_vector(ADDR_WIDTH-1 downto 0); 	-- Direccion actual de la memoria 
+        data_in  : out std_logic_vector(DATA_WIDTH-1 downto 0); 	-- Dato que se escribe en la RAM
+        data_out : out std_logic_vector(DATA_WIDTH-1 downto 0)		-- Dato leido de la RAM 
     );
 end entity;
 
 architecture gg of micro2 is
 
     signal state_reg, state_next : state_type;
+		-- state_reg: estado actual
+		-- state_next: siguiente estado
 
-    signal addr_reg  : unsigned(ADDR_WIDTH-1 downto 0) := (others => '0');
+    signal addr_reg  : unsigned(ADDR_WIDTH-1 downto 0) := (others => '0'); -- Guarda la direccion actual de memoria
 
-    signal rom_data  : std_logic_vector(DATA_WIDTH-1 downto 0);
-    signal ram_din   : std_logic_vector(DATA_WIDTH-1 downto 0);
-    signal ram_dout  : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal rom_data  : std_logic_vector(DATA_WIDTH-1 downto 0); 	-- Dato leido de la ROM
+    signal ram_din   : std_logic_vector(DATA_WIDTH-1 downto 0); 	-- Dato que se escribe en la RAM
+    signal ram_dout  : std_logic_vector(DATA_WIDTH-1 downto 0);	-- Dato leido de la RAM 
 
-    signal wr_en_s   : std_logic := '0';
-    signal rd_en_s   : std_logic := '0';
+    signal wr_en_s   : std_logic := '0';	-- Control de escritura en RAM
+    signal rd_en_s   : std_logic := '0';	-- Control de lectura en RAM	
 
 begin
 
@@ -37,35 +39,35 @@ begin
         )
         port map (
             clk      => clk,
-            addr     => std_logic_vector(addr_reg),
-            data_out => rom_data
+            addr     => std_logic_vector(addr_reg), -- Convierte 	la direccion a std_logic_vector para la ROM 
+            data_out => rom_data		-- Guarda el dato leido de la ROM 
         );
 
     u_ram : ram_sincrona
         generic map (
-            DATA_WIDTH => DATA_WIDTH,
+            DATA_WIDTH => DATA_WIDTH, 
             ADDR_WIDTH => ADDR_WIDTH,
             RDW_MODE   => "READ_FIRST"
         )
         port map (
             clk      => clk,
-            rd_en    => rd_en_s,
-            wr_en    => wr_en_s,
+            rd_en    => rd_en_s,		-- Control de lectura
+            wr_en    => wr_en_s,		-- Control de escritura
             addr     => std_logic_vector(addr_reg),
-            data_in  => ram_din,
-            data_out => ram_dout
+            data_in  => ram_din,		-- Dato que entra a la RAM
+            data_out => ram_dout		-- Dato que sale de la RAM 
         );
 
     -- Registro de estados
     process(clk, rst)
     begin
         if rst = '1' then
-            state_reg <= S0;
-            addr_reg  <= (others => '0');
-            ram_din   <= (others => '0');
+            state_reg <= S0;		-- Vuelve al estado inicial 
+            addr_reg  <= (others => '0');		-- Reinicia la direccion 
+            ram_din   <= (others => '0');		-- Limpia datos
 
         elsif rising_edge(clk) then
-            state_reg <= state_next;
+            state_reg <= state_next;		-- Actualiza al siguiente estado 
 
             if state_reg = S2 then
                 ram_din <= rom_data;
